@@ -161,3 +161,74 @@ display(
         ORDER BY _arquivo_origem
     """)
 )
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## ⚙️ Desafio 1: Validando os dados da camada Bronze
+# MAGIC
+# MAGIC Prontinho o Desafio 1! 🚀
+# MAGIC
+# MAGIC Primeiro preparei o ambiente no Databricks, fiz o upload dos 12 arquivos CSV do VRA e executei o notebook da camada Bronze para criar a tabela `voebem.bronze.vra`.
+# MAGIC
+# MAGIC Depois fiz as consultas de validação para conferir se a ingestão estava correta, sem modificar os dados.
+# MAGIC
+# MAGIC ### 🔎 Resultado
+# MAGIC
+# MAGIC * **Registros:** 1.014.705
+# MAGIC * **Colunas:** 14
+# MAGIC * **Colunas de dados:** 12
+# MAGIC * **Colunas de auditoria:** `_arquivo_origem` e `_ingerido_em`
+# MAGIC * **Arquivos ingeridos:** 12 CSVs
+# MAGIC
+# MAGIC ### 🧪 Consultas utilizadas
+# MAGIC
+# MAGIC ```sql
+# MAGIC SELECT COUNT(*) AS quantidade_registros
+# MAGIC FROM voebem.bronze.vra;
+# MAGIC
+# MAGIC DESCRIBE voebem.bronze.vra;
+# MAGIC
+# MAGIC SELECT *
+# MAGIC FROM voebem.bronze.vra
+# MAGIC LIMIT 10;
+# MAGIC ```
+# MAGIC
+# MAGIC Com essas consultas, consegui conferir a quantidade de registros, verificar as colunas disponíveis e visualizar os primeiros registros da tabela.
+# MAGIC
+# MAGIC **Bronze validada ✅🥉**
+# MAGIC
+# MAGIC --- es
+# MAGIC
+# MAGIC ## ⚙️ Desafío 1: Validando los datos de la capa Bronze
+# MAGIC
+# MAGIC ¡Listo el Desafío 1! 🚀
+# MAGIC
+# MAGIC Primero preparé el ambiente en Databricks, subí los 12 archivos CSV del VRA y ejecuté el notebook de la capa Bronze para crear la tabla `voebem.bronze.vra`.
+# MAGIC
+# MAGIC Después hice las consultas de validación para comprobar que la ingesta hubiera quedado bien, sin modificar los datos.
+# MAGIC
+# MAGIC ### 🔎 Resultado
+# MAGIC
+# MAGIC * **Registros:** 1.014.705
+# MAGIC * **Columnas:** 14
+# MAGIC * **Columnas de datos:** 12
+# MAGIC * **Columnas de auditoría:** `_arquivo_origem` y `_ingerido_em`
+# MAGIC * **Archivos ingeridos:** 12 CSV
+# MAGIC
+# MAGIC ### 🧪 Consultas utilizadas
+# MAGIC
+# MAGIC ```sql
+# MAGIC SELECT COUNT(*) AS quantidade_registros
+# MAGIC FROM voebem.bronze.vra;
+# MAGIC
+# MAGIC DESCRIBE voebem.bronze.vra;
+# MAGIC
+# MAGIC SELECT *
+# MAGIC FROM voebem.bronze.vra
+# MAGIC LIMIT 10;
+# MAGIC ```
+# MAGIC
+# MAGIC Con estas consultas pude comprobar la cantidad de registros, revisar las columnas disponibles y ver los primeros registros de la tabla.
+# MAGIC
+# MAGIC **Bronze validada ✅🥉**

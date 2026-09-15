@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # Bronze — tabelas de referência
 # MAGIC
@@ -285,3 +289,46 @@ for tabela, comentario in [
     spark.sql(f"COMMENT ON TABLE {tabela} IS '{comentario}'")
 
 print("comentarios aplicados")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 🥉 Conclusões — Bronze Referências
+# MAGIC
+# MAGIC Prontinho com a etapa de **Bronze — tabelas de referência** ✅
+# MAGIC
+# MAGIC Criei e validei as tabelas de referência no Databricks:
+# MAGIC
+# MAGIC * `voebem.bronze.aerodromos` → **496 registros**
+# MAGIC * `voebem.bronze.empresas_nacionais` → **729 registros**
+# MAGIC * `voebem.bronze.empresas_estrangeiras` → **148 registros**
+# MAGIC * `voebem.bronze.codigos_operacao` → tabela com os códigos e suas descrições
+# MAGIC
+# MAGIC Também conferi que as tabelas foram materializadas corretamente no schema `voebem.bronze`.
+# MAGIC
+# MAGIC Um ponto que achei interessante foi a diferença na quantidade de registros com código ICAO: nas empresas nacionais, **20 de 729** possuem ICAO, enquanto nas estrangeiras são **147 de 148**.
+# MAGIC
+# MAGIC A ideia nesta etapa foi manter cada fonte separada na camada Bronze, sem fazer joins ou decisões de modelagem.
+# MAGIC
+# MAGIC Agora a Bronze está com as tabelas necessárias para seguir para a próxima etapa do pipeline. 🚀
+# MAGIC
+# MAGIC --- es
+# MAGIC
+# MAGIC ## 🥉 Conclusiones — Bronze Referencias
+# MAGIC
+# MAGIC ¡Listo con la etapa de **Bronze — tablas de referencia**! ✅
+# MAGIC
+# MAGIC Creé y validé las tablas de referencia en Databricks:
+# MAGIC
+# MAGIC * `voebem.bronze.aerodromos` → **496 registros**
+# MAGIC * `voebem.bronze.empresas_nacionais` → **729 registros**
+# MAGIC * `voebem.bronze.empresas_estrangeiras` → **148 registros**
+# MAGIC * `voebem.bronze.codigos_operacao` → tabla con los códigos y sus descripciones
+# MAGIC
+# MAGIC También comprobé que las tablas quedaron materializadas correctamente en el schema `voebem.bronze`.
+# MAGIC
+# MAGIC Un dato que me llamó la atención fue la diferencia en la cantidad de registros con código ICAO: en las empresas nacionales, **20 de 729** tienen ICAO, mientras que en las extranjeras son **147 de 148**.
+# MAGIC
+# MAGIC En esta etapa mantuve cada fuente separada en la capa Bronze, sin hacer joins ni tomar decisiones de modelado.
+# MAGIC
+# MAGIC Ahora sí, Bronze está lista para seguir con la próxima etapa del pipeline. 🚀

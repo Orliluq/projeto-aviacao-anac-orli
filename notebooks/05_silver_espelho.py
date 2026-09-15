@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # Silver — espelho governado do bronze
 # MAGIC
@@ -508,3 +512,51 @@ display(spark.sql("""
 # COMMAND ----------
 
 display(spark.sql("SHOW TABLES IN voebem.silver"))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 🥈 Conclusões — Camada Silver
+# MAGIC
+# MAGIC Mais uma etapa concluída! 🚀
+# MAGIC
+# MAGIC Na camada Silver, transformei os dados da Bronze aplicando a governança e a tipagem necessária, mas mantendo a mesma quantidade de registros.
+# MAGIC
+# MAGIC ### 🔎 Validações
+# MAGIC
+# MAGIC * `voebem.silver.vra` → **1.014.705 registros**
+# MAGIC * Bronze x Silver → **0 diferenças de linhas**
+# MAGIC * `voebem.silver.empresas` → **877 registros**
+# MAGIC * `voebem.silver.aerodromos` → **496 registros**
+# MAGIC * `voebem.silver.codigos_operacao` → **13 registros**
+# MAGIC * **100% das colunas estão documentadas**
+# MAGIC * Comentários e tags de governança foram aplicados nas tabelas
+# MAGIC
+# MAGIC Também validei a tipagem dos campos de data e hora e criei as colunas derivadas de atraso, mantendo apenas transformações que não envolvem regras de negócio.
+# MAGIC
+# MAGIC A ideia aqui foi deixar a Silver mais organizada, tipada e documentada, sem perder nenhuma linha da Bronze.
+# MAGIC
+# MAGIC **Silver validada ✅🥈**
+# MAGIC
+# MAGIC --- es
+# MAGIC ## 🥈 Conclusiones — Capa Silver
+# MAGIC
+# MAGIC ¡Una etapa más terminada! 🚀
+# MAGIC
+# MAGIC En la capa Silver transformé los datos de Bronze aplicando la tipificación y la gobernanza necesarias, pero manteniendo la misma cantidad de registros.
+# MAGIC
+# MAGIC ### 🔎 Validaciones
+# MAGIC
+# MAGIC * `voebem.silver.vra` → **1.014.705 registros**
+# MAGIC * Bronze vs. Silver → **0 diferencias de filas**
+# MAGIC * `voebem.silver.empresas` → **877 registros**
+# MAGIC * `voebem.silver.aerodromos` → **496 registros**
+# MAGIC * `voebem.silver.codigos_operacao` → **13 registros**
+# MAGIC * **100% de las columnas están documentadas**
+# MAGIC * Se aplicaron comentarios y tags de gobernanza en las tablas
+# MAGIC
+# MAGIC También validé la tipificación de los campos de fecha y hora y creé las columnas derivadas de atraso, manteniendo solo transformaciones que no implican reglas de negocio.
+# MAGIC
+# MAGIC La idea fue dejar la Silver más organizada, tipificada y documentada, sin perder ninguna fila de la Bronze.
+# MAGIC
+# MAGIC **Silver validada ✅🥈**
