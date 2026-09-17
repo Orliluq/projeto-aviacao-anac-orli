@@ -536,31 +536,6 @@
             "width": 12,
             "height": 8
           }
-        },
-        {
-          "widget": {
-            "name": "e22cc5d8",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "obt_voos",
-                  "disaggregated": true
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {}
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 15,
-            "width": 6,
-            "height": 6
-          }
         }
       ],
       "pageType": "PAGE_TYPE_CANVAS",
