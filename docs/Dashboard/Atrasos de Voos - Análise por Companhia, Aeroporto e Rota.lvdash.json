@@ -226,6 +226,89 @@
           }
         ]
       }
+    },
+    {
+      "name": "silver_quality",
+      "displayName": "Silver - Qualidade de Dados",
+      "queryLines": [
+        "SELECT\n",
+        "  'Dados em Quarentena' AS status,\n",
+        "  COUNT(*) AS total\n",
+        "FROM\n",
+        "  voebem.silver.vra_quarentena\n",
+        "UNION ALL\n",
+        "SELECT\n",
+        "  'Dados Válidos' AS status,\n",
+        "  COUNT(*) AS total\n",
+        "FROM\n",
+        "  voebem.silver.vra"
+      ]
+    },
+    {
+      "name": "bronze_vra",
+      "displayName": "Bronze - Ingestão VRA",
+      "config": {
+        "version": "1.1",
+        "source": "voebem.bronze.vra",
+        "dimensions": [
+          {
+            "name": "arquivo_origem",
+            "expr": "_arquivo_origem",
+            "displayName": "Arquivo CSV"
+          }
+        ],
+        "measures": [
+          {
+            "name": "total_registros",
+            "expr": "COUNT(*)",
+            "displayName": "Registros Ingeridos"
+          }
+        ]
+      }
+    },
+    {
+      "name": "gold_top10",
+      "displayName": "Gold - Top 10 Companhias",
+      "queryLines": [
+        "SELECT\n",
+        "  nome_companhia,\n",
+        "  COUNT(*) AS total_voos,\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN partida_pontual = false THEN 1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS voos_atrasados_partida,\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN voo_cancelado THEN 1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS voos_cancelados,\n",
+        "  AVG(atraso_partida_min) AS atraso_medio_partida,\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN partida_pontual = false THEN 1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  )\n",
+        "    / NULLIF(\n",
+        "      SUM(\n",
+        "        CASE\n",
+        "          WHEN partida_pontual IS NOT NULL THEN 1\n",
+        "          ELSE 0\n",
+        "        END\n",
+        "      ),\n",
+        "      0\n",
+        "    ) AS pct_atraso_partida\n",
+        "FROM\n",
+        "  voebem.gold.obt_voos\n",
+        "GROUP BY\n",
+        "  nome_companhia\n",
+        "ORDER BY\n",
+        "  total_voos DESC\n",
+        "LIMIT 10"
+      ]
     }
   ],
   "pages": [
@@ -452,6 +535,31 @@
             "y": 7,
             "width": 12,
             "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "e22cc5d8",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "obt_voos",
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {}
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 6,
+            "height": 6
           }
         }
       ],
@@ -1449,6 +1557,362 @@
             "y": 21,
             "width": 12,
             "height": 7
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "bcc4998e",
+      "displayName": "Arquitetura Medallion",
+      "layout": [
+        {
+          "widget": {
+            "name": "titulo_medallion",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Arquitetura Medallion: Bronze → Silver → Gold\n",
+                "\n",
+                "Fluxo de processamento de dados de voos (VRA/ANAC) através das camadas da arquitetura Medallion"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "bronze_ingestao",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "bronze_vra",
+                  "fields": [
+                    {
+                      "name": "arquivo_origem",
+                      "expression": "`arquivo_origem`"
+                    },
+                    {
+                      "name": "measure(total_registros)",
+                      "expression": "MEASURE(`total_registros`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showDescription": true,
+                "showTitle": true,
+                "title": "Camada Bronze - Ingestão de Dados Brutos",
+                "description": {
+                  "fields": [],
+                  "value": "Volume de registros processados por arquivo CSV (12 arquivos, 213.543 registros totais)"
+                }
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "arquivo_origem",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(total_registros)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "arquivo_origem",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "silver_qualidade",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "silver_quality",
+                  "fields": [
+                    {
+                      "name": "sum(total)",
+                      "expression": "SUM(`total`)"
+                    },
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showDescription": true,
+                "showTitle": true,
+                "title": "Camada Silver - Validação e Qualidade",
+                "description": {
+                  "fields": [],
+                  "value": "Sistema de quarentena: 91,4% dos registros em quarentena, 8,6% dados válidos"
+                }
+              },
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "sum(total)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "status",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "gold_tabela",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "gold_top10",
+                  "fields": [
+                    {
+                      "name": "nome_companhia",
+                      "expression": "`nome_companhia`"
+                    },
+                    {
+                      "name": "total_voos",
+                      "expression": "`total_voos`"
+                    },
+                    {
+                      "name": "voos_atrasados_partida",
+                      "expression": "`voos_atrasados_partida`"
+                    },
+                    {
+                      "name": "voos_cancelados",
+                      "expression": "`voos_cancelados`"
+                    },
+                    {
+                      "name": "atraso_medio_partida",
+                      "expression": "`atraso_medio_partida`"
+                    },
+                    {
+                      "name": "pct_atraso_partida",
+                      "expression": "`pct_atraso_partida`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showDescription": true,
+                "showTitle": true,
+                "title": {
+                  "value": "Camada Gold - Métricas Analíticas Agregadas",
+                  "fields": []
+                },
+                "description": {
+                  "fields": [],
+                  "value": "Métricas pré-calculadas das top 10 companhias: total de voos, atrasos, cancelamentos e taxas de performance"
+                }
+              },
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "nome_companhia",
+                    "displayName": "Companhia Aérea"
+                  },
+                  {
+                    "fieldName": "total_voos",
+                    "displayName": "Total Voos"
+                  },
+                  {
+                    "fieldName": "voos_atrasados_partida",
+                    "displayName": "Voos Atrasados"
+                  },
+                  {
+                    "fieldName": "voos_cancelados",
+                    "displayName": "Cancelados"
+                  },
+                  {
+                    "fieldName": "atraso_medio_partida",
+                    "displayName": "Atraso Médio (min)"
+                  },
+                  {
+                    "fieldName": "pct_atraso_partida",
+                    "displayName": "Taxa de Atraso"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "resumo_medallion",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Resumo da Arquitetura Medallion\n",
+                "\n",
+                "Estas 4 visualizações demonstram o fluxo completo de dados: **Bronze → Silver → Gold**\n",
+                "\n",
+                "- **Bronze**: Ingestão bruta de 12 arquivos CSV (213.543 registros)\n",
+                "- **Silver**: Validação e quarentena com 91,4% dos dados identificados com problemas\n",
+                "- **Gold**: Métricas agregadas prontas para análise executiva e operacional"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 17,
+            "width": 12,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "gold_combo",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "gold_top10",
+                  "fields": [
+                    {
+                      "name": "nome_companhia",
+                      "expression": "`nome_companhia`"
+                    },
+                    {
+                      "name": "total_voos",
+                      "expression": "`total_voos`"
+                    },
+                    {
+                      "name": "pct_atraso_partida",
+                      "expression": "`pct_atraso_partida`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showDescription": true,
+                "showTitle": true,
+                "title": "Camada Gold - Volume vs Taxa de Atraso",
+                "description": {
+                  "fields": [],
+                  "value": "Comparação de volume de voos (barras) vs taxa de atraso (linha) das top 10 companhias aéreas"
+                }
+              },
+              "version": 1,
+              "widgetType": "combo",
+              "encodings": {
+                "x": {
+                  "fieldName": "nome_companhia",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "primary": {
+                    "fields": [
+                      {
+                        "fieldName": "total_voos",
+                        "displayName": "Total de Voos"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  },
+                  "secondary": {
+                    "fields": [
+                      {
+                        "fieldName": "pct_atraso_partida",
+                        "displayName": "Taxa de Atraso"
+                      }
+                    ],
+                    "format": {
+                      "decimalPlaces": {
+                        "places": 1,
+                        "type": "exact"
+                      },
+                      "type": "number-percent"
+                    },
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 9,
+            "width": 6,
+            "height": 8
           }
         }
       ],

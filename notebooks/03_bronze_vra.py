@@ -194,7 +194,14 @@ display(
 # MAGIC LIMIT 10;
 # MAGIC ```
 # MAGIC
-# MAGIC Com essas consultas, consegui conferir a quantidade de registros, verificar as colunas disponíveis e visualizar os primeiros registros da tabela.
+# MAGIC ### 🤖 Consulta ao Genie Code
+# MAGIC Para complementar a validação e documentar a implementação do desafio, utilizei o **Genie Code** para analisar a solução e compreender as decisões técnicas relacionadas à camada Bronze.
+# MAGIC
+# MAGIC A consulta realizada foi:
+# MAGIC
+# MAGIC > **Você pode analisar a implementação deste desafio e documentar como os dados da camada Bronze são validados, explicando quais regras de validação são aplicadas, quais problemas são detectados, como isso impacta a qualidade e a rastreabilidade dos dados e por que essa estratégia é adequada em uma arquitetura Medallion? Inclua as decisões técnicas relevantes e aponte possíveis melhorias.**
+# MAGIC
+# MAGIC Essa consulta permitiu analisar a implementação sob uma perspectiva técnica e relacionar as validações realizadas aos princípios de uma **arquitetura Medallion**, especialmente no que diz respeito à preservação dos dados originais, à qualidade e à rastreabilidade das informações.
 # MAGIC
 # MAGIC **Bronze validada ✅🥉**
 # MAGIC
@@ -229,6 +236,13 @@ display(
 # MAGIC LIMIT 10;
 # MAGIC ```
 # MAGIC
-# MAGIC Con estas consultas pude comprobar la cantidad de registros, revisar las columnas disponibles y ver los primeros registros de la tabla.
+# MAGIC ### 🤖 Consulta a Genie Code
+# MAGIC Para complementar la validación y documentar la implementación del desafío, utilicé **Genie Code** para analizar la solución y comprender las decisiones técnicas relacionadas con la capa Bronze.
+# MAGIC
+# MAGIC La consulta realizada fue:
+# MAGIC
+# MAGIC > **Você pode analisar a implementação deste desafio e documentar como os dados da camada Bronze são validados, explicando quais regras de validação são aplicadas, quais problemas são detectados, como isso impacta a qualidade e a rastreabilidade dos dados e por que essa estratégia é adequada em uma arquitetura Medallion? Inclua as decisões técnicas relevantes e aponte possíveis melhorias.**
+# MAGIC
+# MAGIC Esta consulta permitió analizar la implementación desde una perspectiva técnica y relacionar las validaciones realizadas con los principios de una **arquitectura Medallion**, especialmente en lo relacionado con la preservación de los datos originales, la calidad y la trazabilidad de la información.
 # MAGIC
 # MAGIC **Bronze validada ✅🥉**

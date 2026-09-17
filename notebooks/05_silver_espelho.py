@@ -536,6 +536,17 @@ display(spark.sql("SHOW TABLES IN voebem.silver"))
 # MAGIC
 # MAGIC A ideia aqui foi deixar a Silver mais organizada, tipada e documentada, sem perder nenhuma linha da Bronze.
 # MAGIC
+# MAGIC ### 🤖 Consulta a Genie Code
+# MAGIC Para complementar la implementación y documentar el trabajo realizado en la capa Silver, utilicé **Genie Code** para analizar las transformaciones aplicadas, los controles automatizados de calidad de datos y los mecanismos utilizados para detectar posibles desviaciones de cardinalidad.
+# MAGIC
+# MAGIC La consulta realizada fue:
+# MAGIC
+# MAGIC > **Você pode analisar a implementação deste desafio na camada Silver e documentar como foi realizada a tipagem e a normalização temporal dos dados, quais data quality checks automatizados foram implementados, como são identificados possíveis desvios de cardinalidade e quais alertas são gerados? Explique as decisões técnicas adotadas, como essas validações contribuem para a qualidade, consistência e governança dos dados e por que essa abordagem é adequada dentro de uma arquitetura Medallion. Inclua também os resultados das validações realizadas e aponte possíveis melhorias.**
+# MAGIC
+# MAGIC Esta consulta permitió analizar la implementación desde una perspectiva técnica, relacionando la **tipificación y normalización temporal**, los **controles automatizados de calidad** y la **detección de desviaciones de cardinalidad** con los principios de una arquitectura **Medallion**.
+# MAGIC
+# MAGIC Además, ayudó a documentar las decisiones técnicas adoptadas para garantizar que la capa Silver mantenga los datos consistentes, trazables y preparados para las siguientes etapas del pipeline, sin introducir reglas de negocio propias de la capa Gold.
+# MAGIC
 # MAGIC **Silver validada ✅🥈**
 # MAGIC
 # MAGIC --- es
@@ -559,4 +570,207 @@ display(spark.sql("SHOW TABLES IN voebem.silver"))
 # MAGIC
 # MAGIC La idea fue dejar la Silver más organizada, tipificada y documentada, sin perder ninguna fila de la Bronze.
 # MAGIC
+# MAGIC ### 🤖 Consulta a Genie Code
+# MAGIC Para complementar la implementación y documentar el trabajo realizado en la capa Silver, utilicé **Genie Code** para analizar las transformaciones aplicadas, los controles automatizados de calidad de datos y los mecanismos utilizados para detectar posibles desviaciones de cardinalidad.
+# MAGIC
+# MAGIC La consulta realizada fue:
+# MAGIC
+# MAGIC > **¿Puedes analizar la implementación de este desafío en la capa Silver y documentar cómo se realizó la tipificación y normalización temporal de los datos, qué controles automatizados de calidad de datos fueron implementados, cómo se identifican posibles desviaciones de cardinalidad y qué alertas se generan? Explica las decisiones técnicas adoptadas, cómo estas validaciones contribuyen a la calidad, consistencia y gobernanza de los datos y por qué este enfoque es adecuado dentro de una arquitectura Medallion. Incluye también los resultados de las validaciones realizadas y señala posibles mejoras.**
+# MAGIC
+# MAGIC Esta consulta permitió analizar la implementación desde una perspectiva técnica, relacionando la **tipificación y normalización temporal**, los **controles automatizados de calidad** y la **detección de desviaciones de cardinalidad** con los principios de una arquitectura **Medallion**.
+# MAGIC
+# MAGIC Además, ayudó a documentar las decisiones técnicas adoptadas para garantizar que la capa Silver mantenga los datos consistentes, trazables y preparados para las siguientes etapas del pipeline, sin introducir reglas de negocio propias de la capa Gold.
+# MAGIC
+# MAGIC
 # MAGIC **Silver validada ✅🥈**
+
+# COMMAND ----------
+
+# DBTITLE 1,Análisis de la implementación — validación Silver
+# MAGIC %md
+# MAGIC ## Análisis técnico de la validación Silver
+# MAGIC
+# MAGIC ### 1. Filosofía de diseño: "espejo gobernado"
+# MAGIC
+# MAGIC El principio rector es **no recortar, solo gobernar**. La Silver mantiene el mismo
+# MAGIC nombre de tabla, el mismo grano (una fila por etapa de vuelo) y la misma
+# MAGIC contagem de líneas que la Bronze. La tabla de permitidos/prohibidos de la celda 1
+# MAGIC es la especificación más importante del notebook:
+# MAGIC
+# MAGIC | Acción | Decisión | Justificación |
+# MAGIC |---|---|---|
+# MAGIC | Tipagem (string → TIMESTAMP/INT/DATE) | Permitido | Sin pérdida — `try_cast` convierte sin descartar |
+# MAGIC | Quebrar timestamp en data + hora | Permitido | Proyección derivada, no filtro |
+# MAGIC | Aritmética pura (`real - previsto`) | Permitido | Subtração sin umbral ni clasificación |
+# MAGIC | `COMMENT` en todas las columnas | Permitido | Metadato, no transforma el dato |
+# MAGIC | UNION ALL de dos cadastros | Permitido | Suma exacta, `origem_cadastro` preserva la fuente |
+# MAGIC | `WHERE` de negocio | **Prohibido** | Cierra preguntas que alguien podría necesitar |
+# MAGIC | `GROUP BY` / agregación | **Prohibido** | Cambia el grano |
+# MAGIC | Umbral / flag / clasificación | **Prohibido** | Decisión de negocio → Gold |
+# MAGIC
+# MAGIC El test decisivo para cualquier columna nueva: *¿Esto incorpora una decisión de
+# MAGIC negocio?* `atraso_partida_min = real - previsto` es aritmética → Silver.
+# MAGIC `partida_pontual = atraso <= 15` incorpora el número **15** → Gold.
+# MAGIC
+# MAGIC ### 2. Reglas de validación aplicadas
+# MAGIC
+# MAGIC #### 2.1 Detección de trampas antes del cast (Celdas 3-4)
+# MAGIC
+# MAGIC Antes de escribir el `CAST`, la implementación **mide** dos problemas ocultos:
+# MAGIC
+# MAGIC - **Trampa 1 — String `'null'` vs NULL real:** La ANAC exporta ausencia como el
+# MAGIC   texto de cuatro caracteres `'null'`, no como NULL de SQL. En la tabla Bronze,
+# MAGIC   `WHERE partida_real IS NULL` devuelve **cero** en una tabla donde 29.145 vuelos
+# MAGIC   no tienen horario real. Corrección: `nullif(coluna, 'null')` **antes** del cast.
+# MAGIC   Sin este paso, `try_cast` intentaría convertir el texto `'null'` a TIMESTAMP,
+# MAGIC   fallaría silenciosamente, y el análisis posterior subestimaría los faltantes.
+# MAGIC
+# MAGIC - **Trampa 2 — Dos formatos de timestamp en el mismo archivo:** ~80.000 líneas
+# MAGIC   vienen con fracción de segundo de 9 casas (`2026-01-27 19:45:00.123456789`),
+# MAGIC   el resto sin fracción. Un `to_timestamp(col, 'yyyy-MM-dd HH:mm:ss')` fijo
+# MAGIC   devolvería NULL para el 8% de la base **en silencio**. Solución: `try_cast(...
+# MAGIC   AS TIMESTAMP)` acepta ambos formatos sin patrón fijo.
+# MAGIC
+# MAGIC Impacto en calidad: sin estas dos correcciones, ~109.000 registros tendrían
+# MAGIC timestamps silenciosamente nulos, distorsionando cualquier métrica de atraso.
+# MAGIC
+# MAGIC #### 2.2 Validación de contagem: Bronze = Silver (Celda 8)
+# MAGIC
+# MAGIC La prueba objetiva del marco: la diferencia entre `COUNT(*)` de Bronze y Silver
+# MAGIC debe ser **cero**. Resultado: `1.014.705 - 1.014.705 = 0`.
+# MAGIC
+# MAGIC Si la diferencia no fuera cero, la Silver dejaría de ser espejo y pasaría a ser
+# MAGIC recorte — alguien en el futuro haría una pregunta que ella ya no puede responder.
+# MAGIC Esta validación es **determinística y repetible**: no depende de muestreo ni de
+# MAGIC umbrales.
+# MAGIC
+# MAGIC #### 2.3 Validación de conversión de tipos (Celda 10)
+# MAGIC
+# MAGIC Contagem de valores no-nulos por columna timestamp tras el cast:
+# MAGIC
+# MAGIC | Columna | No-nulos |
+# MAGIC |---|---|
+# MAGIC | partida_prevista | 983.905 |
+# MAGIC | partida_real | 985.560 |
+# MAGIC | chegada_prevista | 983.905 |
+# MAGIC | chegada_real | 985.560 |
+# MAGIC | atraso_partida | 954.760 |
+# MAGIC | minutos_recuperados | 954.760 |
+# MAGIC
+# MAGIC Esto confirma que el `try_cast` no descartó datos válidos y que `nullif` trató
+# MAGIC los `'null'` textuales correctamente. La diferencia entre 983.905 (prevista) y
+# MAGIC 985.560 (real) refleja la naturaleza del dato (algunos vuelos tienen horario real
+# MAGIC sin previsto y viceversa), no pérdida de conversión.
+# MAGIC
+# MAGIC #### 2.4 Validación de UNION ALL (Celda 13)
+# MAGIC
+# MAGIC Para `silver.empresas`, la contagem debe ser la suma exacta de las dos tablas
+# MAGIC Bronze: `729 + 148 = 877`. Resultado confirmado. La columna `origem_cadastro`
+# MAGIC ('nacional' / 'estrangeira') preserva la trazabilidad de cada registro a su
+# MAGIC fuente original — sin esta columna, la unión sería una fusión irreversible.
+# MAGIC
+# MAGIC #### 2.5 Validación de espejos de referencia (Celda 17)
+# MAGIC
+# MAGIC `silver.aerodromos` y `silver.codigos_operacao` deben tener la misma contagem
+# MAGIC que sus orígenes Bronze: `496 = 496`, `13 = 13`. Confirmado.
+# MAGIC
+# MAGIC #### 2.6 Auditoría de gobernanza (Celdas 23-25)
+# MAGIC
+# MAGIC Dos consultas al `information_schema` verifican que la documentación es real, no
+# MAGIC afirmación:
+# MAGIC
+# MAGIC - **Cobertura de comentarios:** 100% de las columnas en las 4 tablas Silver tienen
+# MAGIC   `COMMENT` no vacío. La consulta usa `SUM(CASE WHEN comment IS NULL OR comment =
+# MAGIC   '')` — si alguna columna no tuviera comentario, aparecería aquí.
+# MAGIC - **Tags aplicadas:** 16 tags (4 por tabla: `camada`, `dominio`, `fonte`,
+# MAGIC   `grao`) verificadas vía `information_schema.table_tags`.
+# MAGIC
+# MAGIC ### 3. Decisiones técnicas relevantes
+# MAGIC
+# MAGIC - **`try_cast` en lugar de `CAST`**: Convierte lo que puede y devuelve NULL para lo
+# MAGIC   que no, sin abortar la query. En una Bronze donde todo es string, esto es
+# MAGIC   esencial — un `CAST` estricto fallaría la carga completa por un único valor
+# MAGIC   malformado.
+# MAGIC
+# MAGIC - **`nullif(col, 'null')` antes del cast**: Trata el texto `'null'` como ausencia
+# MAGIC   real. Sin esto, `try_cast('null' AS TIMESTAMP)` devolvería NULL, pero solo por
+# MAGIC   falla de conversión — el resultado numérico es el mismo, pero el patrón es
+# MAGIC   explícito y auditable: dice "sé que la fuente usa 'null' como marcador de
+# MAGIC   ausencia".
+# MAGIC
+# MAGIC - **`date_format` para extraer hora**: Produce `HH:mm` como string legible. No es
+# MAGIC   `CAST AS TIME` (que traería segundos) ni `HOUR()` (que perdería los minutos).
+# MAGIC   Es una decisión de legibilidad para el consumidor final (humano o LLM).
+# MAGIC
+# MAGIC - **`replace(',', '.')` en altitude**: La ANAC publica con coma decimal brasileña.
+# MAGIC   El `replace` + `try_cast AS DOUBLE` es la conversión más simple y segura.
+# MAGIC
+# MAGIC - **Renomear `uf` → `uf_nome`**: La columna se llama `UF` pero contiene `"Acre"`,
+# MAGIC   "São Paulo"` por extenso, no la sigla. Renombrar para decir la verdad es
+# MAGIC   gobernanza; inventar la sigla sería transformación de negocio.
+# MAGIC
+# MAGIC - **`CREATE OR REPLACE TABLE`**: Operación atómica y idempotente. Cada ejecución
+# MAGIC   reconstruye la Silver desde la Bronze completa, evitando drift acumulativo.
+# MAGIC
+# MAGIC - **Comentarios de negocio, no de tipo**: "TIMESTAMP de la partida" no ayuda a
+# MAGIC   nadie; "horario en que la aeronave efectivamente salió del suelo" sí. El
+# MAGIC   consumidor final es un LLM que lee el `COMMENT` para decidir qué columna usar.
+# MAGIC
+# MAGIC ### 4. Por qué esta estrategia es adecuada en Medallion
+# MAGIC
+# MAGIC La arquitectura Medallion separa responsabilidades por capa, y la Silver de este
+# MAGIC proyecto respeta esa separación con disciplina inusual:
+# MAGIC
+# MAGIC - **Bronze preserva, Gold decide, Silver puentea.** La Silver no toma decisiones
+# MAGIC   de negocio (umbrales, clasificaciones, filtros). Esto significa que cambiar el
+# MAGIC   criterio de puntualidad de 15 a 30 minutos es una línea de SQL en la Gold —
+# MAGIC   no un reprocesamiento de toda la Silver.
+# MAGIC
+# MAGIC - **Trazabilidad bidireccional.** Cada registro Silver tiene `_arquivo_origem`
+# MAGIC   (de qué CSV vino), `_ingerido_em` (cuándo entró al Bronze) y
+# MAGIC   `_transformado_em` (cuándo se construyó la Silver). En la `silver.empresas`,
+# MAGIC   `origem_cadastro` añade trazabilidad de fuente. Se puede navegar de cualquier
+# MAGIC   registro Silver de vuelta al archivo original.
+# MAGIC
+# MAGIC - **Idempotencia.** `CREATE OR REPLACE` + `mode("overwrite")` garantizan que
+# MAGIC   ejecutar dos veces produce el mismo resultado. No hay drift acumulativo ni
+# MAGIC   duplicación.
+# MAGIC
+# MAGIC - **Validación objetiva y automatizable.** Todas las validaciones son consultas
+# MAGIC   SQL con resultado esperado conocido (cero diferencias, 100% documentado). Son
+# MAGIC   aptas para integración en un pipeline con aserciones programáticas.
+# MAGIC
+# MAGIC - **Metadatos como activo.** Tags (`camada`, `dominio`, `fonte`, `grao`) hacen
+# MAGIC   que las tablas sean descubribles por criterio sin conocer la estructura del
+# MAGIC   proyecto. Esto es esencial cuando el consumidor es un LLM que necesita
+# MAGIC   identificar qué tablas pertenecen a qué capa y dominio.
+# MAGIC
+# MAGIC ### 5. Posibles mejoras
+# MAGIC
+# MAGIC 1. **Aserciones programáticas en lugar de inspección visual.** Las validaciones
+# MAGIC    actuales usan `display()` para inspección humana. Convertirlas en
+# MAGIC    `assert` con umbral cero permitiría que el pipeline falle automáticamente si
+# MAGIC    la Silver se desincroniza de la Bronze.
+# MAGIC
+# MAGIC 2. **Métrica de conversión de tipos.** La celda 10 cuenta no-nulos, pero no
+# MAGIC    compara con la Bronze. Una métrica como "filas donde el cast devolvió NULL
+# MAGIC    pero el Bronze tenía un valor no-'null'" detectaría conversiones perdidas que
+# MAGIC    no son ausencia legítima.
+# MAGIC
+# MAGIC 3. **Validación de rango en `atraso_partida_min`.** Los valores fuera de rango
+# MAGIC    plausível (menos de -2h o más de 24h) indican error de fecha en la fuente.
+# MAGIC    La Gold ya trata esto con `atraso_fora_de_faixa`, pero un conteo en la Silver
+# MAGIC    cuantificaría el problema antes de que llegue al consumidor.
+# MAGIC
+# MAGIC 4. **Unique key o constraint de calidad.** Aunque el VRA no tenga clave natural
+# MAGIC    única, se podría crear un hash determinístico de columnas para detectar
+# MAGIC    duplicados exactos entre ejecuciones y alertar si aparecen.
+# MAGIC
+# MAGIC 5. **Versionamento de esquema.** `CREATE OR REPLACE` con `overwriteSchema`
+# MAGIC    destruye el historial de esquema. Considerar `ALTER TABLE ... ADD COLUMNS`
+# MAGIC    para cambios evolutivos, preservando time travel de esquema.
+# MAGIC
+# MAGIC 6. **Data quality expectations.** Si este pipeline se moviera a Spark Declarative
+# MAGIC    Pipelines, las validaciones de contagem y cobertura de comentarios podrían
+# MAGIC    ser `expectations` que fallan el pipeline automáticamente sin código
+# MAGIC    adicional.

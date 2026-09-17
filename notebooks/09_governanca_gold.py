@@ -271,3 +271,34 @@ display(spark.sql("""
 # MAGIC E ele responde também a pergunta do compliance, na direção contrária: *"esse número
 # MAGIC no relatório veio de onde?"* — `obt_voos` ← `fato_voos` ← `silver.vra` ←
 # MAGIC `bronze.vra` ← arquivo CSV da ANAC no volume, com data e hora de cada passo.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 🥇 Desafio 3: Camada Gold — Agregar métricas de negócio (KPIs por empresa, rotas e aeroportos)
+# MAGIC
+# MAGIC ### 🤖 Consulta ao Genie Code
+# MAGIC Para complementar a implementação da camada Gold e documentar a construção das métricas de negócio, utilizei o **Genie Code** para analisar a solução e as decisões técnicas adotadas para disponibilizar os dados para consumo analítico e de IA.
+# MAGIC
+# MAGIC A consulta realizada foi:
+# MAGIC
+# MAGIC > **Você pode analisar a implementação deste desafio na camada Gold e documentar como foram construídas as métricas de negócio (KPIs) por empresa, rotas e aeroportos, quais regras de negócio foram aplicadas, quais validações foram realizadas e como a qualidade e a rastreabilidade dos dados são garantidas? Explique também como foram implementadas a documentação das tabelas e colunas, as tags de governança e o lineage desde a Bronze até a OBT. Inclua as decisões técnicas relevantes, os resultados das validações e possíveis melhorias.**
+# MAGIC
+# MAGIC Essa consulta permitiu analisar a implementação da camada Gold sob uma perspectiva técnica e de negócio, relacionando a **criação de KPIs**, as **regras de negócio**, as **validações de qualidade**, a **governança de metadados** e o **lineage** aos princípios de uma arquitetura **Medallion**.
+# MAGIC
+# MAGIC Também permitiu documentar decisões importantes da solução, como a separação de responsabilidades entre **Silver e Gold**, a deduplicação de registros, a validação de faixas de atraso, a documentação das colunas para consumo por IA e a rastreabilidade dos dados desde os arquivos de origem até a tabela `obt_voos`.
+# MAGIC
+# MAGIC --- es 
+# MAGIC
+# MAGIC ## 🥇 Desafío 3: Capa Gold — Agregar métricas de negocio (KPIs por empresa, rutas y aeropuertos)
+# MAGIC
+# MAGIC ### 🤖 Consulta a Genie Code
+# MAGIC Para complementar la implementación de la capa Gold y documentar la construcción de las métricas de negocio, utilicé **Genie Code** para analizar la solución y las decisiones técnicas adoptadas para disponibilizar los datos para el consumo analítico y de IA.
+# MAGIC
+# MAGIC La consulta realizada fue:
+# MAGIC
+# MAGIC > **¿Puedes analizar la implementación de este desafío en la capa Gold y documentar cómo se construyeron las métricas de negocio (KPIs) por empresa, rutas y aeropuertos, qué reglas de negocio se aplicaron, qué validaciones se realizaron y cómo se garantiza la calidad y trazabilidad de los datos? Explica también cómo se implementaron la documentación de las tablas y columnas, las tags de gobernanza y el lineage desde Bronze hasta la OBT. Incluye las decisiones técnicas relevantes, los resultados de las validaciones y posibles mejoras.**
+# MAGIC
+# MAGIC Esta consulta permitió analizar la implementación de la capa Gold desde una perspectiva técnica y de negocio, relacionando la **creación de KPIs**, las **reglas de negocio**, las **validaciones de calidad**, la **gobernanza de metadatos** y el **lineage** con los principios de una arquitectura **Medallion**.
+# MAGIC
+# MAGIC También permitió documentar decisiones importantes de la solución, como la separación de responsabilidades entre **Silver y Gold**, la deduplicación de registros, la validación de rangos de atraso, la documentación de las columnas para consumo por IA y la trazabilidad de los datos desde los archivos de origen hasta la tabla `obt_voos`.
